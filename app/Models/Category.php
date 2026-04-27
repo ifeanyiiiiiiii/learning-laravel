@@ -3,24 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['user_id', 'name'])]
-class Household extends Model
+#[Fillable(['household_id', 'name', 'type', 'color', 'icon'])]
+class Category extends Model
 {
-    use HasFactory;
-
-    public function owner(): BelongsTo
+    public function household(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function categories(): HasMany
-    {
-        return $this->hasMany(Category::class);
+        return $this->belongsTo(Household::class);
     }
 
     public function transactions(): HasMany

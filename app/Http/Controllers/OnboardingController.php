@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Database\Seeders\DefaultCategoriesSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,9 +29,11 @@ class OnboardingController extends Controller
             'name' => ['required', 'string', 'max:255'],
         ]);
 
-        auth()->user()->household()->create([
+        $household = auth()->user()->household()->create([
             'name' => $validated['name'],
         ]);
+
+        (new DefaultCategoriesSeeder())->seedFor($household);
 
         return redirect()->route('dashboard');
     }
