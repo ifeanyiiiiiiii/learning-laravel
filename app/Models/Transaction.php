@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['household_id', 'category_id', 'amount', 'currency', 'type', 'description', 'transacted_at'])]
+#[Fillable(['household_id', 'category_id', 'recurring_expense_id', 'amount', 'currency', 'type', 'description', 'transacted_at'])]
 class Transaction extends Model
 {
     protected function casts(): array
@@ -25,5 +25,10 @@ class Transaction extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function recurringExpense(): BelongsTo
+    {
+        return $this->belongsTo(RecurringExpense::class);
     }
 }

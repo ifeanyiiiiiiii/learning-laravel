@@ -27,4 +27,9 @@ class Household extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function recurringExpenses(): HasMany
+    {
+        return $this->hasMany(RecurringExpense::class);
+    }
 }

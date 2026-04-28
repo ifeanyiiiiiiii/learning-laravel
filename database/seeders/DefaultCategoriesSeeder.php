@@ -27,6 +27,11 @@ class DefaultCategoriesSeeder
 
     public function seedFor(Household $household): void
     {
+        // Guard: only seed if household has no categories yet
+        if ($household->categories()->exists()) {
+            return;
+        }
+
         $household->categories()->createMany(self::CATEGORIES);
     }
 }

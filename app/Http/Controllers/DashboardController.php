@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RecurringExpense;
 use App\Services\ExchangeRateService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -49,6 +50,42 @@ class DashboardController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'type', 'color', 'icon']);
 
+        // ── Recurring expenses (active templates) ────────────────────────
+        $recurringExpenses = $household->recurringExpenses()
+            ->with('category:id,name,color,icon')
+            ->where('is_active', true)
+            ->orderByRaw("FIELD(frequency, 'monthly', 'weekly', 'daily')")
+            ->orderBy('description')
+            ->get(['id', 'category_id', 'description', 'amount', 'currency', 'frequency', 'starts_at', 'last_generated_at', 'is_active']);
+
+        // Monthly impact: daily*30 + weekly*4.33 + monthly*1
+        $monthlyImpact = $recurringExpenses->sum(function (RecurringExpense $re) {
+            return match ($re->frequency) {
+                'daily'   => (float) $re->amount * 30,
+                'weekly'  => (float) $re->amount * 4.33,
+                'monthly' => (float) $re->amount,
+                default   => 0,
+            };
+        });
+
+        // ── One-off transactions this month (no recurring_expense_id) ────
+        $oneOffThisMonth = $household->transactions()
+            ->with('category:id,name,color,icon')
+            ->whereNull('recurring_expense_id')
+            ->whereYear('transacted_at', $now->year)
+            ->whereMonth('transacted_at', $now->month)
+            ->latest('transacted_at')
+            ->get(['id', 'category_id', 'recurring_expense_id', 'amount', 'currency', 'type', 'description', 'transacted_at']);
+
+        // ── Income transactions this month ────────────────────────────────
+        $incomeThisMonth = $household->transactions()
+            ->with('category:id,name,color,icon')
+            ->where('type', 'income')
+            ->whereYear('transacted_at', $now->year)
+            ->whereMonth('transacted_at', $now->month)
+            ->latest('transacted_at')
+            ->get(['id', 'category_id', 'recurring_expense_id', 'amount', 'currency', 'type', 'description', 'transacted_at']);
+
         // ── Live exchange rate ─────────────────────────────────────────────
         $ngnPerUsd = $fx->ngnPerUsd();
 
@@ -60,6 +97,10 @@ class DashboardController extends Controller
             'recentTransactions' => $recentTransactions,
             'categories'         => $categories,
             'ngnPerUsd'          => $ngnPerUsd,
+            'recurringExpenses'  => $recurringExpenses,
+            'monthlyImpact'      => round($monthlyImpact, 2),
+            'oneOffThisMonth'    => $oneOffThisMonth,
+            'incomeThisMonth'    => $incomeThisMonth,
         ]);
     }
 }
